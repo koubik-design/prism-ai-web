@@ -28,7 +28,8 @@
     /* App shell */
     .sidebar{width:300px;padding:18px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);backdrop-filter: blur(6px);border-right:1px solid rgba(255,255,255,0.03)}
     .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;box-shadow:0 8px 30px rgba(99,102,241,.12);transform-origin:center;animation:logo-bounce calc(6s * var(--anim-speed)) ease-in-out infinite}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;box-shadow:0 8px 30px rgba(99,102,241,.12);transform-origin:center;animation:logo-bounce calc(6s * var(--anim-speed)) ease-in-out infinite;overflow:hidden}
+    .logo img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block}
     @keyframes logo-bounce{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.03)}100%{transform:translateY(0) scale(1)}}
 
     .brand .title{font-weight:700;font-size:1.15rem}
@@ -77,6 +78,18 @@
     .shimmer{background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);background-size:200% 100%;animation:shimmer 3s linear infinite}
     @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+    /* mobile adjustments */
+    .device-mobile .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-110%);transition:transform .24s ease;z-index:30;width:78%;max-width:320px}
+    .device-mobile .sidebar.open{transform:translateX(0)}
+    .device-mobile .main{margin-left:0}
+    .hamburger{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+
+    @media (max-width:900px){
+      .sidebar{display:flex}
+      .hamburger{display:block}
+      body{padding-left:0}
+    }
+
     /* reduced motion respect */
     @media (prefers-reduced-motion: reduce){
       :root{--anim-speed: .0}
@@ -90,9 +103,13 @@
 </head>
 <body>
   <div class="bg-band"></div>
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="logo">P</div>
+      <div class="logo" id="logoContainer">
+        <!-- Logo will be inserted here if available -->
+        <img id="siteLogo" alt="Prism logo" src="" onerror="this.style.display='none'" />
+        <div id="logoFallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">P</div>
+      </div>
       <div>
         <div class="title">Prism AI</div>
         <div style="font-size:12px;color:var(--muted)">Your creative assistant</div>
@@ -110,6 +127,7 @@
   <div class="main">
     <div class="header">
       <div class="meta">
+        <button class="hamburger" id="hamburger">☰</button>
         <div id="currentTitle" style="font-weight:700">New conversation</div>
         <div id="currentSubtitle" style="font-size:12px;color:var(--muted);margin-left:8px">Empty</div>
       </div>
@@ -156,6 +174,18 @@
         </select>
       </div>
 
+      <hr />
+
+      <div style="font-weight:700">Logo</div>
+      <div style="font-size:13px;color:var(--muted)">You can upload a custom logo (saved locally) or provide a remote URL. The app also looks for <code>/assets/logo.png</code> in the repo.</div>
+      <div class="setting-row">
+        <input type="file" id="logoUpload" accept="image/*" />
+      </div>
+      <div class="setting-row">
+        <input id="logoUrl" placeholder="https://.../logo.png" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
+        <button class="new-btn" id="setLogoUrl">Use</button>
+      </div>
+
     </div>
   </div>
 
@@ -163,6 +193,80 @@
     const WORKER_URL = "https://prism-ai.koubik.workers.dev";
     let currentThreadId = null;
     let threads = [];
+
+    /* Device detection & compatibility */
+    function detectDevice(){
+      // modern API
+      if(navigator.userAgentData){
+        const ua = navigator.userAgentData;
+        const mobile = ua.mobile;
+        document.body.classList.toggle('device-mobile', mobile);
+        document.body.classList.toggle('device-desktop', !mobile);
+        document.body.classList.toggle('device-tablet', false);
+        return;
+      }
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+      const isAndroid = /android/i.test(ua);
+      const isIPhone = /iPhone|iPod/i.test(ua);
+      const isIPad = /iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isMobile = isAndroid || isIPhone || isIPad;
+      document.body.classList.toggle('device-mobile', isMobile);
+      document.body.classList.toggle('device-tablet', isIPad && !isIPhone);
+      document.body.classList.toggle('device-desktop', !isMobile);
+    }
+
+    detectDevice();
+    window.addEventListener('resize', ()=>{ /* adjust if needed */ });
+
+    /* --- Logo loading: check repo assets, then localStorage, then allow upload/URL --- */
+    async function tryLoadRepoLogo(){
+      try{
+        const res = await fetch('/assets/logo.png', { method: 'HEAD' });
+        if(res.ok){ setLogoSrc('/assets/logo.png'); return true; }
+      }catch(e){}
+      return false;
+    }
+
+    function setLogoSrc(src){
+      const img = document.getElementById('siteLogo');
+      const fallback = document.getElementById('logoFallback');
+      img.src = src || '';
+      img.style.display = src ? 'block' : 'none';
+      fallback.style.display = src ? 'none' : 'flex';
+    }
+
+    function loadStoredLogo(){
+      const logo = localStorage.getItem('prism_logo');
+      if(logo){ setLogoSrc(logo); return true; }
+      return false;
+    }
+
+    // wire upload
+    document.getElementById('logoUpload').addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = function(){
+        localStorage.setItem('prism_logo', reader.result);
+        setLogoSrc(reader.result);
+      };
+      reader.readAsDataURL(f);
+    });
+
+    document.getElementById('setLogoUrl').addEventListener('click', ()=>{
+      const url = document.getElementById('logoUrl').value.trim();
+      if(!url) return;
+      // basic validation
+      if(!/^https?:\/\//i.test(url)) return alert('Please provide a full http(s) URL');
+      // set but don't persist remote url in localstorage by default
+      localStorage.setItem('prism_logo_remote', url);
+      setLogoSrc(url);
+    });
+
+    (async ()=>{
+      const found = await tryLoadRepoLogo();
+      if(!found) loadStoredLogo();
+    })();
 
     /* --- UI helpers --- */
     function saveSettings(){
@@ -215,6 +319,9 @@
     document.getElementById('themeSelect').onchange = saveSettings;
     document.getElementById('themeToggle').onclick = ()=>{ const sel = document.getElementById('themeSelect'); sel.value = sel.value === 'dark' ? 'light' : 'dark'; saveSettings(); };
     document.getElementById('compactToggle').onclick = ()=>{ const cb = document.getElementById('compactUI'); cb.checked = !cb.checked; saveSettings(); };
+
+    /* hamburger for mobile */
+    document.getElementById('hamburger').onclick = ()=>{ const sb = document.getElementById('sidebar'); sb.classList.toggle('open'); };
 
     /* --- Threads / messages --- */
     async function init(){
