@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism AI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { display: flex; height: 100vh; background: #0f172a; color: #fff; }
+    
+    /* Sidebar */
+    .sidebar { width: 260px; background: #1e293b; padding: 15px; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #334155; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.2rem; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+    .new-btn { padding: 10px; background: #6366f1; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+    .new-btn:hover { background: #4f46e5; }
+    .thread-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+    .thread-item { padding: 10px; border-radius: 6px; cursor: pointer; background: #334155; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .thread-item:hover { background: #475569; }
+
+    /* Main Chat */
+    .chat-area { flex: 1; display: flex; flex-direction: column; }
+    .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .message { max-width: 75%; padding: 10px 14px; border-radius: 10px; line-height: 1.4; word-break: break-word; }
+    .user { align-self: flex-end; background: #475569; }
+    .assistant { align-self: flex-start; background: #6366f1; }
+    
+    .input-box { padding: 15px; display: flex; gap: 10px; background: #1e293b; }
+    input { flex: 1; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; }
+    button.send { padding: 12px 20px; background: #6366f1; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; }
+    button.send:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="brand">
+      <span>Prism AI</span>
+    </div>
+    <button class="new-btn" onclick="createNewChat()">+ New Chat</button>
+    <div class="thread-list" id="threadList"></div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages"></div>
+    <div class="input-box">
+      <input type="text" id="userInput" placeholder="Ask Prism AI..." onkeypress="if(event.key==='Enter') sendMessage()">
+      <button class="send" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://prism-ai.koubik.workers.dev"; 
+    let currentThreadId = null;
+
+    async function init() {
+      await loadThreads();
+      if (!currentThreadId) createNewChat();
+    }
+
+    async function loadThreads() {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/threads`);
+        const threads = await res.json();
+        const list = document.getElementById('threadList');
+        list.innerHTML = '';
+        threads.forEach(t => {
+          const item = document.createElement('div');
+          item.className = 'thread-item';
+          item.textContent = t.title;
+          item.onclick = () => selectThread(t.id);
+          list.appendChild(item);
+        });
+      } catch (e) {
+        console.error("Error loading threads:", e);
+      }
+    }
+
+    async function createNewChat() {
+      try {
+        const res = await fetch(`${WORKER_URL}/api/threads/new`, { method: 'POST' });
+        const data = await res.json();
+        currentThreadId = data.threadId;
+        document.getElementById('messages').innerHTML = '';
+        await loadThreads();
+      } catch (e) {
+        console.error("Error creating chat:", e);
+      }
+    }
+
+    async function selectThread(id) {
+      currentThreadId = id;
+      try {
+        const res = await fetch(`${WORKER_URL}/api/messages/${id}`);
+        const msgs = await res.json();
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        msgs.forEach(m => appendMessage(m.content, m.role));
+      } catch (e) {
+        console.error("Error loading thread messages:", e);
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text || !currentThreadId) return;
+
+      appendMessage(text, 'user');
+      input.value = '';
+
+      const loadingMsg = appendMessage('Prism AI is thinking...', 'assistant');
+
+      try {
+        const res = await fetch(`${WORKER_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threadId: currentThreadId, message: text })
+        });
+
+        const data = await res.json();
+        loadingMsg.textContent = data.reply || "Sorry, I couldn't process that.";
+        loadThreads();
+      } catch (err) {
+        loadingMsg.textContent = "❌ Failed to reach AI backend.";
+      }
+    }
+
+    function appendMessage(text, role) {
+      const container = document.getElementById('messages');
+      const msg = document.createElement('div');
+      msg.className = `message ${role}`;
+      msg.textContent = text;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+      return msg;
+    }
+
+    init();
+  </script>
+</body>
+</html>
