@@ -39,6 +39,530 @@
     .new-btn:hover{transform:translateY(-3px)}
 
     .thread-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:6px}
+    .thread-item{padding:12px;border-radius:10px;background:var(--glass);cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:10px;transition:transform .18s,background .18s,box-shadow .18s;box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02);position:relative}
+    .thread-item:hover{transform:translateX(6px);background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));color:#e6eef8}
+    .thread-item.active{background:linear-gradient(90deg, rgba(99,102,241,.12), rgba(6,182,212,.06));color:white;box-shadow:0 8px 24px rgba(6,182,212,.06)}
+
+    .thread-item .mini-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px;opacity:0;transition:opacity .12s}
+    .thread-item:hover .mini-actions{opacity:1}
+
+    .folder-section{margin-top:8px}
+    .folder{font-weight:700;padding:8px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,0.02)}
+    .folder-list{display:flex;flex-direction:column;gap:6px;padding:6px}
+
+    /* Main chat area */
+    .main{flex:1;display:flex;flex-direction:column}
+    .header{padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .header .meta{display:flex;align-items:center;gap:10px}
+    .controls{display:flex;gap:10px;align-items:center}
+
+    /* Sign-in placeholder button */
+    .signin-btn{padding:8px 12px;border-radius:10px;border:none;background:rgba(255,255,255,0.03);color:var(--muted);cursor:pointer;font-weight:600}
+    .signin-btn:hover{background:rgba(255,255,255,0.04);color:white}
+
+    .chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .messages{flex:1;padding:24px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+    .message{max-width:72%;padding:12px 14px;border-radius:12px;line-height:1.4;animation:fadeUp .35s var(--anim-speed) both}
+    .message.user{margin-left:auto;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));color:var(--muted)}
+    .message.assistant{margin-right:auto;background:linear-gradient(90deg,var(--primary),#4f46e5);color:white;box-shadow:0 10px 30px rgba(99,102,241,.08)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Input */
+    .input-box{padding:14px;display:flex;gap:10px;border-top:1px solid rgba(255,255,255,0.02);align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    .input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;outline:none}
+    .send{padding:10px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),#06b6d4);font-weight:700;color:#042237;cursor:pointer;box-shadow:0 8px 30px rgba(6,182,212,.08);transition:transform .12s}
+    .send:active{transform:translateY(1px)}
+
+    /* Floating settings */
+    .settings-panel{position:fixed;right:22px;bottom:22px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:12px;box-shadow:0 12px 40px rgba(2,6,23,.6);border:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(8px)}
+    .settings-toggle{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:8px;border-radius:8px}
+    .settings{display:none;min-width:320px;padding:10px;display:flex;flex-direction:column;gap:10px}
+    .settings.open{display:flex}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+    /* compact mode */
+    .compact .thread-item{padding:8px;border-radius:8px;font-size:.9rem}
+    .compact .message{padding:8px;border-radius:8px}
+
+    /* shimmer on thread titles */
+    .thread-title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .shimmer{background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%);background-size:200% 100%;animation:shimmer 3s linear infinite}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    /* mobile adjustments */
+    .device-mobile .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-110%);transition:transform .24s ease;z-index:30;width:78%;max-width:320px}
+    .device-mobile .sidebar.open{transform:translateX(0)}
+    .device-mobile .main{margin-left:0}
+    .hamburger{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+
+    @media (max-width:900px){
+      .sidebar{display:flex}
+      .hamburger{display:block}
+      body{padding-left:0}
+    }
+
+    /* reduced motion respect */
+    @media (prefers-reduced-motion: reduce){
+      :root{--anim-speed: .0}
+      *{animation:none !important;transition:none !important}
+    }
+
+    /* scroll styling */
+    ::-webkit-scrollbar{width:10px;height:10px}
+    ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border-radius:10px}
+  </style>
+</head>
+<body>
+  <div class="bg-band"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo" id="logoContainer">
+        <!-- Logo will be inserted here if available -->
+        <img id="siteLogo" alt="Prism logo" src="" onerror="this.style.display='none'" />
+        <div id="logoFallback" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">P</div>
+      </div>
+      <div>
+        <div class="title">Prism AI</div>
+        <div style="font-size:12px;color:var(--muted)">Your creative assistant</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="new-btn" onclick="createNewChat()">+ New Chat</button>
+      <button class="settings-toggle" id="openSettings" title="Open settings">⚙️</button>
+    </div>
+
+    <!-- Folders -->
+    <div class="folder-section">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <input id="newFolderName" placeholder="New folder" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit" />
+        <button class="new-btn" onclick="createFolder()">Add</button>
+      </div>
+      <div id="folderList" class="folder-list"></div>
+    </div>
+
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Chats</div>
+    <div class="thread-list" id="threadList"></div>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <div class="meta">
+        <button class="hamburger" id="hamburger">☰</button>
+        <div id="currentTitle" style="font-weight:700">New conversation</div>
+        <div id="currentSubtitle" style="font-size:12px;color:var(--muted);margin-left:8px">Empty</div>
+      </div>
+      <div class="controls">
+        <button class="settings-toggle" id="themeToggle">🌓</button>
+        <button class="settings-toggle" id="compactToggle" title="Toggle compact mode">📏</button>
+        <button class="signin-btn" id="signinBtn">Sign in ▾</button>
+      </div>
+    </div>
+
+    <div class="chat-area">
+      <div class="messages" id="messages"></div>
+      <div class="input-box">
+        <input id="userInput" class="input" placeholder="Ask Prism AI..." onkeypress="if(event.key==='Enter') sendMessage()" />
+        <button class="send" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-panel" id="settingsPanel">
+    <button class="settings-toggle" id="closeSettings">✖️</button>
+    <div class="settings" id="settings">
+      <div style="font-weight:700">Settings</div>
+
+      <div class="setting-row">
+        <div style="font-size:13px;color:var(--muted)">Animations</div>
+        <label><input type="checkbox" id="animToggle" checked /> Enable</label>
+      </div>
+
+      <div class="setting-row">
+        <div style="font-size:13px;color:var(--muted)">Animation speed</div>
+        <input type="range" id="animSpeed" min="0.25" max="2" step="0.05" value="1" />
+      </div>
+
+      <div class="setting-row">
+        <div style="font-size:13px;color:var(--muted)">Compact UI</div>
+        <label><input type="checkbox" id="compactUI" /> On</label>
+      </div>
+
+      <div class="setting-row">
+        <div style="font-size:13px;color:var(--muted)">Theme</div>
+        <select id="themeSelect">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div style="font-weight:700">Colors</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;gap:6px">
+            <button class="color-swatch" data-primary="#6366f1" style="width:28px;height:28px;border-radius:6px;background:#6366f1;border:none"></button>
+            <button class="color-swatch" data-primary="#06b6d4" style="width:28px;height:28px;border-radius:6px;background:#06b6d4;border:none"></button>
+            <button class="color-swatch" data-primary="#f97316" style="width:28px;height:28px;border-radius:6px;background:#f97316;border:none"></button>
+            <button class="color-swatch" data-primary="#10b981" style="width:28px;height:28px;border-radius:6px;background:#10b981;border:none"></button>
+          </div>
+          <input type="color" id="primaryPicker" title="Primary color" />
+          <input type="color" id="accentPicker" title="Accent color" />
+        </div>
+      </div>
+
+      <hr />
+
+      <div style="font-weight:700">Logo</div>
+      <div style="font-size:13px;color:var(--muted)">Upload a local logo file (preferred). The app will still look for <code>/assets/logo.png</code> if present.</div>
+      <div class="setting-row">
+        <input type="file" id="logoUpload" accept="image/*" />
+      </div>
+
+      <hr />
+      <div style="font-weight:700">Chats</div>
+      <div style="font-size:13px;color:var(--muted)">Manage chat history, export or import conversations as JSON.</div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="new-btn" id="exportAll">Export All</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" />
+        <button class="new-btn" id="importBtn">Import</button>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);margin-top:8px">Tip: Right-click a chat for more actions (rename, delete, move).</div>
+
+    </div>
+  </div>
+
+  <!-- Landing / small intro page before entering chat -->
+  <div id="landing" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(2,6,23,.6),rgba(2,6,23,.85));z-index:80">
+    <div style="max-width:820px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:28px;border-radius:16px;box-shadow:0 20px 60px rgba(2,6,23,.7);border:1px solid rgba(255,255,255,0.03);display:flex;gap:24px;align-items:center">
+      <div style="width:160px;height:160px;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:36px;color:white">P</div>
+      <div style="flex:1">
+        <div style="font-size:28px;font-weight:800;margin-bottom:8px">Say Hi to Prism AI</div>
+        <div style="color:var(--muted);margin-bottom:14px">Prism is an AI that can generate images, assist with creative tasks, and chat about ideas. Use the color picker to customize the app and upload your logo in Settings.</div>
+        <div style="display:flex;gap:10px">
+          <button class="new-btn" id="enterBtn">Enter Prism</button>
+          <button class="signin-btn" id="landingSignin">Sign in with Email / Google / GitHub</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://prism-ai.koubik.workers.dev";
+    let currentThreadId = null;
+    let threads = [];
+    let folders = [];
+
+    /* Device detection & compatibility */
+    function detectDevice(){
+      // modern API
+      if(navigator.userAgentData){
+        const ua = navigator.userAgentData;
+        const mobile = ua.mobile;
+        document.body.classList.toggle('device-mobile', mobile);
+        document.body.classList.toggle('device-desktop', !mobile);
+        document.body.classList.toggle('device-tablet', false);
+        return;
+      }
+      const ua = navigator.userAgent || navigator.vendor || window.opera;
+      const isAndroid = /android/i.test(ua);
+      const isIPhone = /iPhone|iPod/i.test(ua);
+      const isIPad = /iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isMobile = isAndroid || isIPhone || isIPad;
+      document.body.classList.toggle('device-mobile', isMobile);
+      document.body.classList.toggle('device-tablet', isIPad && !isIPhone);
+      document.body.classList.toggle('device-desktop', !isMobile);
+    }
+
+    detectDevice();
+    window.addEventListener('resize', ()=>{ /* adjust if needed */ });
+
+    /* --- Logo loading: check repo assets, then localStorage, then allow upload/URL --- */
+    async function tryLoadRepoLogo(){
+      try{
+        const res = await fetch('/assets/logo.png', { method: 'HEAD' });
+        if(res.ok){ setLogoSrc('/assets/logo.png'); return true; }
+      }catch(e){}
+      return false;
+    }
+
+    function setLogoSrc(src){
+      const img = document.getElementById('siteLogo');
+      const fallback = document.getElementById('logoFallback');
+      img.src = src || '';
+      img.style.display = src ? 'block' : 'none';
+      fallback.style.display = src ? 'none' : 'flex';
+    }
+
+    function loadStoredLogo(){
+      const logo = localStorage.getItem('prism_logo');
+      if(logo){ setLogoSrc(logo); return true; }
+      return false;
+    }
+
+    // wire upload
+    document.getElementById('logoUpload').addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = function(){
+        localStorage.setItem('prism_logo', reader.result);
+        setLogoSrc(reader.result);
+      };
+      reader.readAsDataURL(f);
+    });
+
+    // removed remote URL flow per request: logo import is file-only (but repo asset still checked)
+
+    (async ()=>{
+      const found = await tryLoadRepoLogo();
+      if(!found) loadStoredLogo();
+    })();
+
+    /* --- UI helpers --- */
+    function saveSettings(){
+      const s = { anim: !!document.getElementById('animToggle').checked, speed: parseFloat(document.getElementById('animSpeed').value), compact: !!document.getElementById('compactUI').checked, theme: document.getElementById('themeSelect').value, primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(), accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() };
+      localStorage.setItem('prism_settings', JSON.stringify(s));
+      applySettings(s);
+    }
+
+    function loadSettings(){
+      const raw = localStorage.getItem('prism_settings');
+      const defaults = { anim:true, speed:1, compact:false, theme:'dark', primary:'#6366f1', accent:'#06b6d4' };
+      const s = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
+      document.getElementById('animToggle').checked = s.anim;
+      document.getElementById('animSpeed').value = s.speed;
+      document.getElementById('compactUI').checked = s.compact;
+      document.getElementById('themeSelect').value = s.theme;
+      document.getElementById('primaryPicker').value = s.primary;
+      document.getElementById('accentPicker').value = s.accent;
+      applySettings(s);
+    }
+
+    function applySettings(s){
+      document.documentElement.style.setProperty('--anim-speed', s.anim ? s.speed : 0);
+      document.body.classList.toggle('compact', s.compact);
+
+      // theme
+      if(s.theme === 'light'){
+        document.documentElement.style.setProperty('--bg','#f7fbff');
+        document.documentElement.style.setProperty('--panel','#ffffff');
+        document.documentElement.style.setProperty('--muted','#475569');
+        document.documentElement.style.setProperty('--primary', s.primary || '#06b6d4');
+        document.documentElement.style.setProperty('--accent', s.accent || '#7c3aed');
+        document.documentElement.style.setProperty('--card','#ffffff');
+        document.documentElement.style.setProperty('--glass','rgba(2,6,23,0.03)');
+      } else {
+        document.documentElement.style.setProperty('--bg','#0f172a');
+        document.documentElement.style.setProperty('--panel','#0b1220');
+        document.documentElement.style.setProperty('--muted','#94a3b8');
+        document.documentElement.style.setProperty('--primary', s.primary || '#6366f1');
+        document.documentElement.style.setProperty('--accent', s.accent || '#06b6d4');
+        document.documentElement.style.setProperty('--card','#111827');
+        document.documentElement.style.setProperty('--glass','rgba(255,255,255,0.03)');
+      }
+    }
+
+    /* Settings panel controls */
+    document.getElementById('openSettings').onclick = ()=>{ document.getElementById('settings').classList.add('open'); };
+    document.getElementById('closeSettings').onclick = ()=>{ document.getElementById('settings').classList.remove('open'); };
+    document.getElementById('animToggle').onchange = saveSettings;
+    document.getElementById('animSpeed').oninput = saveSettings;
+    document.getElementById('compactUI').onchange = saveSettings;
+    document.getElementById('themeSelect').onchange = saveSettings;
+    document.getElementById('themeToggle').onclick = ()=>{ const sel = document.getElementById('themeSelect'); sel.value = sel.value === 'dark' ? 'light' : 'dark'; saveSettings(); };
+    document.getElementById('compactToggle').onclick = ()=>{ const cb = document.getElementById('compactUI'); cb.checked = !cb.checked; saveSettings(); };
+
+    // color pickers & swatches
+    document.querySelectorAll('.color-swatch').forEach(b=>b.addEventListener('click', ()=>{
+      const p = b.getAttribute('data-primary'); document.documentElement.style.setProperty('--primary', p); document.getElementById('primaryPicker').value = p; saveSettings();
+    }));
+    document.getElementById('primaryPicker').addEventListener('input', (e)=>{ document.documentElement.style.setProperty('--primary', e.target.value); saveSettings(); });
+    document.getElementById('accentPicker').addEventListener('input', (e)=>{ document.documentElement.style.setProperty('--accent', e.target.value); saveSettings(); });
+
+    /* hamburger for mobile */
+    document.getElementById('hamburger').onclick = ()=>{ const sb = document.getElementById('sidebar'); sb.classList.toggle('open'); };
+
+    /* --- Threads / messages --- */
+    async function init(){
+      loadSettings();
+      loadLocalFolders();
+      await loadThreads();
+      if(!currentThreadId) await createNewChat();
+    }
+
+    async function loadThreads(){
+      try{
+        const res = await fetch(`${WORKER_URL}/api/threads`);
+        threads = await res.json();
+      }catch(e){ console.warn('Could not fetch remote threads, falling back to local storage.');
+        threads = JSON.parse(localStorage.getItem('prism_threads')||'[]');
+      }
+      // merge with local threads and maintain ids
+      const list = document.getElementById('threadList');
+      list.innerHTML = '';
+      threads.forEach((t)=>{
+        const item = document.createElement('div');
+        item.className = 'thread-item';
+        if(currentThreadId === t.id) item.classList.add('active');
+        const title = document.createElement('div');
+        title.className = 'thread-title';
+        title.textContent = t.title || 'Untitled';
+        item.appendChild(title);
+        item.onclick = ()=> selectThread(t.id);
+
+        const mini = document.createElement('div');
+        mini.className = 'mini-actions';
+        mini.innerHTML = `<button title="Rename" onclick="event.stopPropagation();renameThread('${t.id}')">✏️</button><button title="Delete" onclick="event.stopPropagation();deleteThread('${t.id}')">🗑️</button><button title="Move" onclick="event.stopPropagation();openMoveMenu(event,'${t.id}')">📁</button>`;
+        item.appendChild(mini);
+
+        // subtle animated shimmer for new threads
+        if(t.unread) title.classList.add('shimmer');
+
+        list.appendChild(item);
+      });
+      renderFolders();
+    }
+
+    function saveThreadsLocally(){ localStorage.setItem('prism_threads', JSON.stringify(threads)); }
+
+    /* Folders */
+    function loadLocalFolders(){ folders = JSON.parse(localStorage.getItem('prism_folders')||'[]'); renderFolders(); }
+    function saveFolders(){ localStorage.setItem('prism_folders', JSON.stringify(folders)); renderFolders(); }
+    function createFolder(){ const name = document.getElementById('newFolderName').value.trim(); if(!name) return; const id = 'f_'+Date.now(); folders.push({id,name,open:true}); document.getElementById('newFolderName').value=''; saveFolders(); }
+    function renderFolders(){ const el = document.getElementById('folderList'); if(!el) return; el.innerHTML=''; folders.forEach(f=>{
+      const row = document.createElement('div'); row.className='folder';
+      const left = document.createElement('div'); left.textContent = f.name; row.appendChild(left);
+      const right = document.createElement('div'); right.innerHTML=`<button onclick="event.stopPropagation();toggleFolder('${f.id}')">${f.open? '▾':'▸'}</button><button onclick="event.stopPropagation();renameFolder('${f.id}')">✏️</button>`;
+      row.appendChild(right);
+      el.appendChild(row);
+      if(f.open){ const contained = document.createElement('div'); contained.style.padding='6px 8px'; contained.style.display='flex'; contained.style.flexDirection='column'; contained.style.gap='6px';
+        threads.filter(t=>t.folder===f.id).forEach(t=>{ const c = document.createElement('div'); c.className='thread-item'; c.textContent = t.title || 'Untitled'; c.onclick = ()=> selectThread(t.id); contained.appendChild(c); });
+        el.appendChild(contained);
+      }
+    }); }
+    function toggleFolder(id){ const f = folders.find(x=>x.id===id); if(!f) return; f.open=!f.open; saveFolders(); }
+    function renameFolder(id){ const f = folders.find(x=>x.id===id); if(!f) return; const nv = prompt('Rename folder', f.name); if(!nv) return; f.name = nv; saveFolders(); }
+    function openMoveMenu(ev, threadId){ ev.preventDefault(); const name = prompt('Move to folder id (create via left panel) — enter folder id or leave blank'); if(name===null) return; const folder = folders.find(x=>x.name===name || x.id===name); if(!folder) return alert('Folder not found'); const t = threads.find(x=>x.id===threadId); if(t){ t.folder = folder.id; saveThreadsLocally(); loadThreads(); } }
+
+    async function createNewChat(){
+      try{
+        const res = await fetch(`${WORKER_URL}/api/threads/new`,{method:'POST'});
+        const data = await res.json();
+        currentThreadId = data.threadId;
+        document.getElementById('messages').innerHTML = '';
+        document.getElementById('currentTitle').textContent = 'New conversation';
+        document.getElementById('currentSubtitle').textContent = 'Empty';
+        await loadThreads();
+      }catch(e){ console.error('Error creating chat',e);
+        // fallback local create
+        const id = 't_'+Date.now(); const t = { id, title: 'New conversation', messages:[], unread:false }; threads.unshift(t); saveThreadsLocally(); currentThreadId = id; document.getElementById('messages').innerHTML=''; await loadThreads();
+      }
+    }
+
+    async function selectThread(id){
+      currentThreadId = id;
+      try{
+        const res = await fetch(`${WORKER_URL}/api/messages/${id}`);
+        const msgs = await res.json();
+        const container = document.getElementById('messages');
+        container.innerHTML='';
+        msgs.forEach(m=>appendMessage(m.content,m.role));
+        const thread = threads.find(t=>t.id===id);
+        document.getElementById('currentTitle').textContent = thread?.title || 'Conversation';
+        document.getElementById('currentSubtitle').textContent = `${msgs.length} messages`;
+        await loadThreads();
+      }catch(e){ console.error('Error loading thread messages',e);
+        const thread = threads.find(t=>t.id===id);
+        const container = document.getElementById('messages');
+        container.innerHTML='';
+        (thread?.messages||[]).forEach(m=>appendMessage(m.content,m.role));
+        document.getElementById('currentTitle').textContent = thread?.title || 'Conversation';
+        document.getElementById('currentSubtitle').textContent = `${(thread?.messages||[]).length} messages (local)`;
+        await loadThreads();
+      }
+    }
+
+    async function sendMessage(){
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if(!text || !currentThreadId) return;
+      appendMessage(text,'user');
+      input.value='';
+      const loadingMsg = appendMessage('Prism AI is thinking...','assistant');
+
+      try{
+        const res = await fetch(`${WORKER_URL}/api/chat`,{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threadId:currentThreadId,message:text})
+        });
+        const data = await res.json();
+        loadingMsg.textContent = data.reply || "Sorry, I couldn't process that.";
+        // save to local thread copy
+        const t = threads.find(x=>x.id===currentThreadId); if(t){ t.messages = t.messages||[]; t.messages.push({role:'user',content:text}); t.messages.push({role:'assistant',content: data.reply||''}); saveThreadsLocally(); }
+        await loadThreads();
+      }catch(err){ loadingMsg.textContent = '❌ Failed to reach AI backend.'; }
+    }
+
+    function appendMessage(text,role){
+      const container = document.getElementById('messages');
+      const msg = document.createElement('div');
+      msg.className = `message ${role}`;
+      // simple markdown-like code block highlight (very small)
+      if(typeof text === 'string' && text.includes('```')){
+        const parts = text.split('```');
+        parts.forEach((p,i)=>{
+          if(i%2===1){ const pre = document.createElement('pre'); pre.style.background='rgba(0,0,0,0.12)'; pre.style.padding='8px'; pre.style.borderRadius='8px'; pre.textContent = p; msg.appendChild(pre); }
+          else msg.appendChild(document.createTextNode(p));
+        });
+      } else {
+        msg.textContent = text;
+      }
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+      return msg;
+    }
+
+    /* Thread actions: rename/delete/export/import */
+    function renameThread(id){ const t = threads.find(x=>x.id===id); if(!t) return; const nv = prompt('Rename chat', t.title||''); if(!nv) return; t.title = nv; saveThreadsLocally(); loadThreads(); }
+    function deleteThread(id){ if(!confirm('Delete this chat?')) return; threads = threads.filter(t=>t.id!==id); saveThreadsLocally(); if(currentThreadId===id){ currentThreadId = null; document.getElementById('messages').innerHTML=''; } loadThreads(); }
+    document.getElementById('exportAll').addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify({threads,folders},null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'prism-export.json'; a.click(); URL.revokeObjectURL(url); });
+    document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{ try{ const data = JSON.parse(r.result); if(Array.isArray(data.threads)) threads = data.threads.concat(threads); if(Array.isArray(data.folders)) folders = data.folders.concat(folders); saveThreadsLocally(); saveFolders(); loadThreads(); alert('Import complete'); }catch(err){ alert('Invalid file'); } }; r.readAsText(f); });
+
+    /* --- Respect reduced motion by disabling animations when user requests --- */
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if(media.matches){ document.documentElement.style.setProperty('--anim-speed', '0'); }
+
+    init();
+
+    // Landing page controls
+    document.getElementById('enterBtn').addEventListener('click', ()=>{ document.getElementById('landing').style.display='none'; });
+    document.getElementById('landingSignin').addEventListener('click', ()=>{ alert('Sign-in placeholder — implement auth later'); });
+    document.getElementById('signinBtn').addEventListener('click', ()=>{ alert('Sign-in placeholder — implement auth later'); });
+  </script>
+</body>
+</html>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body,#app{height:100%}
+    body{font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue";background: linear-gradient(180deg,var(--bg) 0%, #071022 100%);color:#e6eef8;display:flex}
+
+    /* Animated background subtle gradient bands */
+    .bg-band{position:fixed;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.08;background:linear-gradient(90deg, rgba(99,102,241,.08), transparent 25%, rgba(6,182,212,.06), transparent 75%);filter:blur(60px);transform:translateZ(0);}
+
+    /* App shell */
+    .sidebar{width:300px;padding:18px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);backdrop-filter: blur(6px);border-right:1px solid rgba(255,255,255,0.03)}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;box-shadow:0 8px 30px rgba(99,102,241,.12);transform-origin:center;animation:logo-bounce calc(6s * var(--anim-speed)) ease-in-out infinite;overflow:hidden}
+    .logo img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block}
+    @keyframes logo-bounce{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.03)}100%{transform:translateY(0) scale(1)}}
+
+    .brand .title{font-weight:700;font-size:1.15rem}
+    .actions{display:flex;gap:8px;align-items:center}
+
+    .new-btn{padding:10px 12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--primary),#4f46e5);color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,.12);transition:transform .18s ease,opacity .18s}
+    .new-btn:hover{transform:translateY(-3px)}
+
+    .thread-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:6px}
     .thread-item{padding:12px;border-radius:10px;background:var(--glass);cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:10px;transition:transform .18s,background .18s,box-shadow .18s;box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02)}
     .thread-item:hover{transform:translateX(6px);background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));color:#e6eef8}
     .thread-item.active{background:linear-gradient(90deg, rgba(99,102,241,.12), rgba(6,182,212,.06));color:white;box-shadow:0 8px 24px rgba(6,182,212,.06)}
@@ -177,13 +701,9 @@
       <hr />
 
       <div style="font-weight:700">Logo</div>
-      <div style="font-size:13px;color:var(--muted)">You can upload a custom logo (saved locally) or provide a remote URL. The app also looks for <code>/assets/logo.png</code> in the repo.</div>
+      <div style="font-size:13px;color:var(--muted)">Upload a local logo file (preferred). The app will still look for <code>/assets/logo.png</code> if present.</div>
       <div class="setting-row">
         <input type="file" id="logoUpload" accept="image/*" />
-      </div>
-      <div class="setting-row">
-        <input id="logoUrl" placeholder="https://.../logo.png" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
-        <button class="new-btn" id="setLogoUrl">Use</button>
       </div>
 
     </div>
@@ -251,16 +771,6 @@
         setLogoSrc(reader.result);
       };
       reader.readAsDataURL(f);
-    });
-
-    document.getElementById('setLogoUrl').addEventListener('click', ()=>{
-      const url = document.getElementById('logoUrl').value.trim();
-      if(!url) return;
-      // basic validation
-      if(!/^https?:\/\//i.test(url)) return alert('Please provide a full http(s) URL');
-      // set but don't persist remote url in localstorage by default
-      localStorage.setItem('prism_logo_remote', url);
-      setLogoSrc(url);
     });
 
     (async ()=>{
