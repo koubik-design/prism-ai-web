@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prism AI</title>
   <style>
     :root{
@@ -196,6 +196,11 @@
         </select>
       </div>
 
+      <div class="setting-row">
+        <div style="font-size:13px;color:var(--muted)">Allow zooming (accessibility)</div>
+        <label><input type="checkbox" id="zoomToggle" /> Allow</label>
+      </div>
+
       <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:8px">
         <div style="font-weight:700">Colors</div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -274,21 +279,24 @@
       document.body.classList.toggle('device-tablet', kind === 'tablet');
       document.body.classList.toggle('device-desktop', kind === 'desktop');
 
-      // lock viewport zoom programmatically where supported (meta tag already sets user-scalable=no)
-      try{
-        const metas = document.getElementsByTagName('meta');
-        for(let i=0;i<metas.length;i++){
-          if(metas[i].name === 'viewport'){
-            metas[i].content = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no';
-          }
-        }
-      }catch(e){/* ignore */}
-    }
+      }
 
     // Detect on load and on orientation/resize changes
     detectDevice();
     window.addEventListener('resize', detectDevice);
     window.addEventListener('orientationchange', detectDevice);
+
+    /* Update the viewport meta tag according to user preference */
+    function updateViewportMeta(allowZoom){
+      try{
+        const metas = document.getElementsByTagName('meta');
+        for(let i=0;i<metas.length;i++){
+          if(metas[i].name === 'viewport'){
+            metas[i].content = allowZoom ? 'width=device-width, initial-scale=1.0' : 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no';
+          }
+        }
+      }catch(e){/* ignore */}
+    }
 
     /* --- Logo loading: check repo assets, then localStorage, then allow upload/URL --- */
     async function tryLoadRepoLogo(){
@@ -334,19 +342,20 @@
 
     /* --- UI helpers --- */
     function saveSettings(){
-      const s = { anim: !!document.getElementById('animToggle').checked, speed: parseFloat(document.getElementById('animSpeed').value), compact: !!document.getElementById('compactUI').checked, theme: document.getElementById('themeSelect').value, primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(), accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() };
+      const s = { anim: !!document.getElementById('animToggle').checked, speed: parseFloat(document.getElementById('animSpeed').value), compact: !!document.getElementById('compactUI').checked, theme: document.getElementById('themeSelect').value, allowZoom: !!document.getElementById('zoomToggle').checked, primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(), accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() };
       localStorage.setItem('prism_settings', JSON.stringify(s));
       applySettings(s);
     }
 
     function loadSettings(){
       const raw = localStorage.getItem('prism_settings');
-      const defaults = { anim:true, speed:1, compact:false, theme:'dark', primary:'#6366f1', accent:'#06b6d4' };
+      const defaults = { anim:true, speed:1, compact:false, theme:'dark', allowZoom:true, primary:'#6366f1', accent:'#06b6d4' };
       const s = raw ? Object.assign(defaults, JSON.parse(raw)) : defaults;
       document.getElementById('animToggle').checked = s.anim;
       document.getElementById('animSpeed').value = s.speed;
       document.getElementById('compactUI').checked = s.compact;
       document.getElementById('themeSelect').value = s.theme;
+      document.getElementById('zoomToggle').checked = s.allowZoom;
       document.getElementById('primaryPicker').value = s.primary;
       document.getElementById('accentPicker').value = s.accent;
       applySettings(s);
@@ -355,6 +364,9 @@
     function applySettings(s){
       document.documentElement.style.setProperty('--anim-speed', s.anim ? s.speed : 0);
       document.body.classList.toggle('compact', s.compact);
+
+      // apply zoom preference
+      updateViewportMeta(!!s.allowZoom);
 
       // theme
       if(s.theme === 'light'){
@@ -385,6 +397,7 @@
     document.getElementById('themeSelect').onchange = saveSettings;
     document.getElementById('themeToggle').onclick = ()=>{ const sel = document.getElementById('themeSelect'); sel.value = sel.value === 'dark' ? 'light' : 'dark'; saveSettings(); };
     document.getElementById('compactToggle').onclick = ()=>{ const cb = document.getElementById('compactUI'); cb.checked = !cb.checked; saveSettings(); };
+    document.getElementById('zoomToggle').onchange = saveSettings;
 
     // color pickers & swatches
     document.querySelectorAll('.color-swatch').forEach(b=>b.addEventListener('click', ()=>{
