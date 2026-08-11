@@ -93,6 +93,11 @@
     .device-mobile .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-110%);transition:transform .24s ease;z-index:30;width:78%;max-width:320px}
     .device-mobile .sidebar.open{transform:translateX(0)}
     .device-mobile .main{margin-left:0}
+    .device-mobile .messages{padding:16px}
+    .device-mobile .message{max-width:100%;font-size:1rem;padding:12px}
+    .device-mobile .new-btn, .device-mobile .send{padding:14px 16px;font-size:16px}
+    .device-mobile .input{font-size:16px;padding:14px}
+    .device-mobile .header{padding:12px 16px}
     .hamburger{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
 
     @media (max-width:900px){
@@ -480,9 +485,11 @@
         document.getElementById('currentTitle').textContent = 'New conversation';
         document.getElementById('currentSubtitle').textContent = 'Empty';
         await loadThreads();
+        if(document.body.classList.contains('device-mobile')) document.getElementById('sidebar').classList.remove('open');
       }catch(e){ console.error('Error creating chat',e);
         // fallback local create
         const id = 't_'+Date.now(); const t = { id, title: 'New conversation', messages:[], unread:false }; threads.unshift(t); saveThreadsLocally(); currentThreadId = id; document.getElementById('messages').innerHTML=''; await loadThreads();
+        if(document.body.classList.contains('device-mobile')) document.getElementById('sidebar').classList.remove('open');
       }
     }
 
@@ -498,6 +505,8 @@
         document.getElementById('currentTitle').textContent = thread?.title || 'Conversation';
         document.getElementById('currentSubtitle').textContent = `${msgs.length} messages`;
         await loadThreads();
+        // auto-close sidebar on mobile to show messages
+        if(document.body.classList.contains('device-mobile')) document.getElementById('sidebar').classList.remove('open');
       }catch(e){ console.error('Error loading thread messages',e);
         const thread = threads.find(t=>t.id===id);
         const container = document.getElementById('messages');
@@ -506,6 +515,7 @@
         document.getElementById('currentTitle').textContent = thread?.title || 'Conversation';
         document.getElementById('currentSubtitle').textContent = `${(thread?.messages||[]).length} messages (local)`;
         await loadThreads();
+        if(document.body.classList.contains('device-mobile')) document.getElementById('sidebar').classList.remove('open');
       }
     }
 
