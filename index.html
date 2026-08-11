@@ -116,6 +116,8 @@
     ::-webkit-scrollbar{width:10px;height:10px}
     ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border-radius:10px}
   </style>
+  <script src="https://cloudflare.com" async defer></script>
+  <!-- Při použití kódu buďte obezřetní. Site key: 0x4AAAAAAENOtCCJkxw6oT12 -->
 </head>
 <body>
   <div class="bg-band"></div>
@@ -168,6 +170,7 @@
       <div class="messages" id="messages"></div>
       <div class="input-box">
         <input id="userInput" class="input" placeholder="Ask Prism AI..." onkeypress="if(event.key==='Enter') sendMessage()" />
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAENOtCCJkxw6oT12"></div>
         <button class="send" onclick="sendMessage()">Send</button>
       </div>
     </div>
